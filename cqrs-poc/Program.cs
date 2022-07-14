@@ -7,10 +7,16 @@ using Application.Interfaces;
 using Application.Queries;
 using Application.Queries.FindOutOfStockProduct;
 using Application.Queries.GetProductByName;
+using cqrs_poc.Modules.Swagger;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var vPersonalised = Convert.ToBoolean(builder.Configuration["CustomSwaggerUi:Personalised"]);
+var vCustomHeader = builder.Configuration["CustomSwaggerUi:HeaderImg"];
+var vCustomTitle = builder.Configuration["CustomSwaggerUi:DocTitle"];
+var vCustomPathCss = builder.Configuration["CustomSwaggerUi:PathCss"];
 
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
@@ -27,7 +33,7 @@ builder.Services.AddEntityFrameworkInMemoryDatabase()
     .AddScoped<ICommandDispatcher, CommandDispatcher>()
     .AddScoped<IQueryDispatcher, QueryDispatcher>();
 
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwagger();
 
 var app = builder.Build();
 
@@ -35,8 +41,21 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Swagger UI Modified V.1");
+        c.RoutePrefix = string.Empty;
+
+        if (vPersonalised)
+        {
+            c.DocumentTitle = vCustomTitle;
+            c.HeadContent = vCustomHeader;
+            c.InjectStylesheet(vCustomPathCss);
+        }
+    });
 }
+
+app.UseStaticFiles();
 
 app.UseRouting();
 
